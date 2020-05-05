@@ -20,25 +20,24 @@ io.on("connection", (socket) => {
     let name = ""
 
     socket.on("join-game", (dataRaw) => {
-        let game = games[dataRaw.gameId]
+        let game = games[dataRaw.gameID]
         let data = {
             id: socket.id,
             role: enums.roles.NOTASSINGED,
-            socket,
             isHost: false
         }
 
         let failCode = ""
 
-        if (!game || game.playerNames.indexOf(data.name) != -1 || 
-            data.name.includes("@") || 
-            data.name.includes("#") || 
-            data.name.includes(":") || 
-            data.name.includes(".") || 
-            data.name.startsWith(" ") || 
-            data.name.startsWith("*") || 
-            data.name == "") 
-            failCode = "That name is invalid"
+        if (!game || Object.keys(game.players).indexOf(dataRaw.name) != -1 || 
+            dataRaw.name.includes("@") || 
+            dataRaw.name.includes("#") || 
+            dataRaw.name.includes(":") || 
+            dataRaw.name.includes(".") || 
+            dataRaw.name.startsWith(" ") || 
+            dataRaw.name.startsWith("*") || 
+            dataRaw.name == "") 
+            failCode = "That name is invalid or already in use."
         if (!game) failCode = "Game not found."
 
         if (failCode != "") {
@@ -46,13 +45,13 @@ io.on("connection", (socket) => {
             return
         }
         Object.values(game.players).forEach(player => {
-            player.socket.emit("player-join", data)
+            player.socket.emit("player-join", { ...data, name: dataRaw.name })
         })
-        games[dataRaw.gameId].players.push(data)
-        games[dataRaw.gameId].playerNames.push(data.name)
-        gameConnections[socket.id] = dataRaw.gameId
-        name = data.name
-        socket.emit("joined", game)
+
+        games[dataRaw.gameID].players[dataRaw.name] = { ...data, socket }
+        gameConnections[socket.id] = dataRaw.gameID
+        name = dataRaw.name
+        socket.emit("joined", dataRaw.gameID)
     })
 
     socket.on("create-game", (data) => {
@@ -62,7 +61,7 @@ io.on("connection", (socket) => {
             socket,
             isHost: true
         }
-        if (games[data.gameId]) {
+        if (games[data.gameID]) {
             socket.emit("join-fail", "Game ID invalid.")
             return
         }
@@ -74,14 +73,15 @@ io.on("connection", (socket) => {
             }
         }
 
-        gameConnections[socket.id] = data.gameId
-        games[data.gameId] = game
+        gameConnections[socket.id] = data.gameID
+        games[data.gameID] = game
         name = data.name
-        socket.emit("game-created", "Game ID invalid.")
+        socket.emit("game-created", data.gameID)
     })
 
     socket.on("msg", (msg) => {
-        io.emit("msg", msg, name)
+        let gameID = gameConnections[socket.id]
+        if (games[gameID].players[name].role != enums.roles.DEAD) io.emit("msg", msg, name, gameID)
     })
 
     socket.on("cmd", (msg) => {
@@ -111,8 +111,9 @@ io.on("connection", (socket) => {
                                 player.role = enums.roles.WEREWOLF
                             } else {
                                 i--
-                                werewolfsSkipped++
                             }
+                        } else {
+                            werewolfsSkipped++
                         }
                     }
 
@@ -124,7 +125,7 @@ io.on("connection", (socket) => {
                     })
 
                     if (werewolfsSkipped > 0) {
-                        io.emit("status-msg", `There are only ${2 - werewolfsSkipped} werewolfs. This is beacuse of a shortage of players.`)
+                        io.emit("status-msg", `There are ${2 - werewolfsSkipped} werewolf(s). This is beacuse of a shortage of players.`)
                     }
 
                     game.status.time = enums.times.DAY
@@ -140,7 +141,7 @@ io.on("connection", (socket) => {
                             break
 
                         case enums.roles.NOTASSINGED:
-                            socket.emit("status-msg", `You are a nothing. This is probibly a bug.`)
+                            socket.emit("status-msg", `You are not part of this game.`)
                             break
                     
                         default:

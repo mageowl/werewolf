@@ -91,12 +91,12 @@ const main = (game) => {
 
 joinBtn.onclick = () => {
     let name = prompt("What's your name?")
-    let gameId = prompt("Enter a game ID to join")
-    socket.emit("join-game", {name, gameId})
+    let gameID = prompt("Enter a game ID to join")
+    socket.emit("join-game", {name, gameID})
 }
 
 createBtn.onclick = () => {
     let name = prompt("What's your name?")
-    let gameId = prompt("Enter a game ID to join")
-    socket.emit("create-game", { name, gameId })
+    let gameID = prompt("Enter a game ID to join")
+    socket.emit("create-game", { name, gameID })
 }
