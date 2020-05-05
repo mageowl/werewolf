@@ -1,6 +1,7 @@
 body {
     margin: 0;
     font-family: merriweather;
+    overflow-x: hidden;
 }
 
 /* MENU */
@@ -38,7 +39,8 @@ body {
 #game {
     background-color: rgb(44, 44, 44);
     width: calc(100vw - 10px);
-    height: calc(100vh - 10px);
+    height: calc(100% - 10px);
+    min-height: calc(100vh - 10px);
     padding-top: 10px;
     padding-left: 10px;
     display: none;

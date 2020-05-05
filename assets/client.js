@@ -66,6 +66,9 @@ const main = (gameID) => {
     socket.on("msg", (msg, user, game) => {
         if (game == gameID) chatEl.innerHTML += `<<span class="player-name">${user}</span>> ${msg}<br>`
     })
+    socket.on("player-join", (user, game) => {
+        if (game == gameID) chatEl.innerHTML += `<span class="player-name">${user}</span> joined.<br>`
+    })
 
     socket.on("status-msg", (msg, game) => {
         if (game == gameID) chatEl.innerHTML += `<span class="status-msg">${msg}</span><br>`

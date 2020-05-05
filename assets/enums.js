@@ -1,21 +1,21 @@
 const enums = {
     times: {
-        WAIT: "wait",
+        END: "end",
         DAY: "day",
         NIGHT: "night",
-        WEREWOLFS_WON: "werewolfs-won",
-        VILLAGERS_WON: "villagers-won"
     },
     actions: {
         NONE: "none",
         VOTE: "vote",
-        WEREWOLFS: "werewolfs"
+        WEREWOLVES: "werewolves",
+        SEER: "seer"
     },
     roles: {
         NOTASSINGED: "none",
         DEAD: "dead",
         WEREWOLF: "werewolf",
-        VILLAGER: "villager"
+        VILLAGER: "villager",
+        SEER: "seer"
     }
 }
 
