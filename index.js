@@ -24,7 +24,8 @@ io.on("connection", (socket) => {
         let data = {
             id: socket.id,
             role: enums.roles.NOTASSINGED,
-            isHost: false
+            isHost: false,
+            votes: 0
         }
 
         let failCode = ""
@@ -59,7 +60,8 @@ io.on("connection", (socket) => {
             id: socket.id,
             role: enums.roles.NOTASSINGED,
             socket,
-            isHost: true
+            isHost: true,
+            votes: 0
         }
         if (games[data.gameID]) {
             socket.emit("join-fail", "Game ID invalid.")
@@ -69,7 +71,9 @@ io.on("connection", (socket) => {
             players: {[data.name]: playerData},
             status: {
                 time: enums.times.WAIT,
-                action: enums.actions.NONE
+                action: enums.actions.NONE,
+                werewolfsLeft: -1,
+                playersLeft: -1
             }
         }
 
@@ -97,16 +101,17 @@ io.on("connection", (socket) => {
         switch (cmd) {
             case "start":
                 if (isHost) {
-                    io.emit("status-msg", `${name} has started the game. Get ready...`)
+                    io.emit("status-msg", `${name} has started the game. Get ready...`, gameID)
 
                     let done = []
                     let werewolfsSkipped = 0
                     for (let i = 0; i < 2; i++) {
-                        if (game.players.length - done.length > 2) { 
-                            let playerIndex = Math.floor(Math.random() * (game.players.length))
+                        if (Object.keys(game.players).length - done.length > 3) { 
+                            let playerIndex = Math.floor(Math.random() * (Object.keys(game.players).length))
                             if (done.indexOf(playerIndex) == -1) {
                                 done.push(playerIndex)
                                 let player = Object.values(game.players)[playerIndex]
+                                console.log(player, Object.values(game.players), playerIndex)
                                 player.socket.emit("set-role", enums.roles.WEREWOLF)
                                 player.role = enums.roles.WEREWOLF
                             } else {
@@ -124,8 +129,11 @@ io.on("connection", (socket) => {
                         }
                     })
 
+                    game.status.werewolfsLeft = 2 - werewolfsSkipped
+                    game.status.playersLeft = Object.keys(game.players).length
+
                     if (werewolfsSkipped > 0) {
-                        io.emit("status-msg", `There are ${2 - werewolfsSkipped} werewolf(s). This is beacuse of a shortage of players.`)
+                        io.emit("status-msg", `There are ${2 - werewolfsSkipped} werewolf(s). This is beacuse of a shortage of players.`, gameConnections[socket.id])
                     }
 
                     game.status.time = enums.times.DAY
@@ -137,32 +145,80 @@ io.on("connection", (socket) => {
                 if (game.status.time != enums.times.WAIT) {
                     switch (role) {
                         case enums.roles.DEAD:
-                            socket.emit("status-msg", `You are dead. :(`)
+                            socket.emit("status-msg", `You are dead. :(`, gameID)
                             break
 
                         case enums.roles.NOTASSINGED:
-                            socket.emit("status-msg", `You are not part of this game.`)
+                            socket.emit("status-msg", `You are currently not part of this game.`, gameID)
                             break
                     
                         default:
-                            socket.emit("status-msg", `You are a ${role}.`)
+                            socket.emit("status-msg", `You are a ${role}.`, gameID)
                             break
                     }
                 } else {
-                    socket.emit("status-msg", `I do not know. Ask the randomness...`)
+                    socket.emit("status-msg", `I do not know. Ask the randomness...`, gameID)
                 }
                 break
 
             case "google":
-                socket.emit("open-url", `https://google.com/search?q=${inputs[0]}`)
-                io.emit("status-msg", `${name} looked up ${inputs[0]}`)
+                socket.emit("open-url", `https://google.com/search?q=${inputs.join(" ")}`)
+                io.emit("status-msg", `${name} looked up ${inputs[0]}`, gameConnections[socket.id])
+                break
+            
+            case "player":
+                let playerName = inputs.join(" ")
+                let playerIndex = Object.keys(game.players).indexOf(playerName)
+                if (playerIndex == -1 || role == enums.roles.DEAD) return
+                let player = Object.values(game.players)[playerIndex]
+                if (player.role == enums.roles.DEAD) return
+
+                switch (game.status.action) {
+                    case enums.actions.VOTE:
+                        if (game.status.time != enums.times.DAY) return
+                        if (player.votes == 0) io.emit("status-msg", `${name} accused ${playerName}. To second this, type #player ${playerName}.`, gameID)
+                        else io.emit("status-msg", `${name} seconded the vote for ${playerName}.`, gameID)
+                        player.votes++
+                        if (player.votes > Math.floor(game.status.playersLeft / 2)) {
+                            io.emit("status-msg", `There are ${player.votes} votes for ${playerName}. They will be killed.`, gameID)
+                            player.socket.emit("status-msg", "You are dead now.", gameID)
+                            player.role = enums.roles.DEAD
+                            game.status.playersLeft--
+                            game.status.time = enums.times.NIGHT
+                            game.status.action = enums.actions.WEREWOLFS
+
+                            if (player.role == enums.roles.WEREWOLF) game.status.werewolfsLeft--
+                            if (game.status.werewolfsLeft == 0) {
+                                game.status.time = enums.times.VILLAGERS_WON
+                                game.status.action = enums.actions.NONE
+                                io.emit("win-msg", `The last werewolf, ${playerName}, has been killed. The village is safe at last!`, gameID)
+                            } else {
+                                io.emit("status-msg", `Day turns to dusk. Night is coming... WEREWOLFS, AWAKEN!`, gameID)
+                            }
+
+                            Object.values(game.players).map((player) => { return {...player, votes: 0} })
+                        }
+                        break
+
+                    case enums.actions.WEREWOLFS:
+                        if (role != enums.roles.WEREWOLF) {
+                            socket.emit("status-msg", `Your not a werewolf, sily.`, gameID)
+                        }
+                        if (game.status.time != enums.times.NIGHT) return
+
+                        player.role = enums.roles.DEAD
+                        game.status.time = enums.times.DAY
+                        game.status.action = enums.actions.VOTE
+                        player.socket.emit("status-msg", `The werewolf ${name} has killed you.`, gameID)
+                        io.emit("status-msg", `WEREWOLFS, SLEEP! Time spins, turning night to day. In the night, the werewolfs have killed ${playerName}.`, gameID)
+                        break
+                }
         }
     })
 
     socket.on("disconnect", () => {
         let gameID = gameConnections[socket.id]
         let game = games[gameID]
-        console.log("Player disconnect from", gameConnections[socket.id], gameConnections)
         if (!game) return
 
         delete gameConnections[socket.id]

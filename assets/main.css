@@ -14,13 +14,14 @@ body {
 
 .menu-btn {
     font-size: 1.4em;
-    padding-top: 0.2em;
-    transition: font-size 600ms, padding-top 600ms;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+    transition: font-size 600ms, padding-top 600ms, padding-bottom 600ms;
     cursor: pointer;
 }
 
 .menu-btn:hover {
-    padding-top: 0;
+    padding: 0;
     font-size: 1.6em;
 }
 
@@ -70,6 +71,10 @@ body {
     color: rgb(147, 229, 151);
     font-weight: bold;
     font-style: italic;
+}
+.win-msg {
+    color: rgb(255, 210, 85);
+    font-weight: bold;
 }
 .player-name {
     color: rgb(189, 119, 221);

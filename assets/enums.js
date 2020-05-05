@@ -2,7 +2,9 @@ const enums = {
     times: {
         WAIT: "wait",
         DAY: "day",
-        NIGHT: "night"
+        NIGHT: "night",
+        WEREWOLFS_WON: "werewolfs-won",
+        VILLAGERS_WON: "villagers-won"
     },
     actions: {
         NONE: "none",

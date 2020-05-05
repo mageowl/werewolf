@@ -24,11 +24,14 @@ socket.on("game-created", (game) => {
     main(game)
 })
 
-const main = (game) => {
+const main = (gameID) => {
+
+    document.title = gameID + " — Werewolf"
 
     // Messages
     let msgInput = ""
     window.onkeydown = (e) => {
+        if (e.metaKey) return
         switch (e.key) {
             case "Enter":
                 if (!msgInput.startsWith("#")) socket.emit("msg", msgInput)
@@ -60,12 +63,15 @@ const main = (game) => {
         }
     }
 
-    socket.on("msg", (msg, user) => {
-        chatEl.innerHTML += `<<span class="player-name">${user}</span>> ${msg}<br>`
+    socket.on("msg", (msg, user, game) => {
+        if (game == gameID) chatEl.innerHTML += `<<span class="player-name">${user}</span>> ${msg}<br>`
     })
 
-    socket.on("status-msg", (msg) => {
-        chatEl.innerHTML += `<span class="status-msg">${msg}</span><br>`
+    socket.on("status-msg", (msg, game) => {
+        if (game == gameID) chatEl.innerHTML += `<span class="status-msg">${msg}</span><br>`
+    })
+    socket.on("win-msg", (msg, game) => {
+        if (game == gameID) chatEl.innerHTML += `<span class="win-msg">${msg}</span><br>`
     })
 
     socket.on("set-role", (role) => {
