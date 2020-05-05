@@ -129,16 +129,17 @@ io.on("connection", (socket) => {
                         }
                     }
                     for (let i = 0; i < 1; i++) {
-                        if (Object.keys(game.players).length - done.length > Math.floor(Object.keys(game.players).length / 3) * 2) {
+                        let twoThirds = Math.floor(Object.keys(game.players).length / 3) * 2
+                        if (Object.keys(game.players).length - done.length > twoThirds) {
                             let playerIndex = Math.floor(Math.random() * (Object.keys(game.players).length))
                             if (done.indexOf(playerIndex) == -1) {
                                 done.push(playerIndex)
                                 let player = Object.values(game.players)[playerIndex]
                                 player.socket.emit("set-role", enums.roles.SEER)
                                 player.role = enums.roles.SEER
+                            } else {
+                                i--
                             }
-                        } else {
-                            i--
                         }
                     }
 
