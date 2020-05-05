@@ -245,9 +245,13 @@ io.on("connection", (socket) => {
                             player.role = enums.roles.DEAD
                             game.status.time = enums.times.DAY
                             game.status.action = enums.actions.VOTE
+                            game.status.playersLeft -= 1
 
                             player.socket.emit("status-msg", `The werewolf, ${name}, has killed you.`, gameID)
                             io.emit("status-msg", `WEREWOLVES, SLEEP. Time spins, turning night to day. In the night, ${player.name}, was killed.`, gameID)
+                            if (game.status.playersLeft == game.status.werewolvesLeft * 2) {
+                                io.emit("win-msg", `After most villagers have died, the werewolves reign over the village, terrorizing all who pass...`, gameID)
+                            }
                         } else {
                             game.status.time = enums.times.DAY
                             game.status.action = enums.actions.VOTE
