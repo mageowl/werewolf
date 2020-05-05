@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Werewolf</title>
+    <link rel="stylesheet" href="assets/main.css">
+</head>
+<body>
+    <div id="menu">
+        <img src="assets/title-image.svg" id="title-image"><br>
+        <span class="menu-btn" id="join">Join a Game</span><br>
+        <span class="menu-btn" id="create">Create Game</span>
+    </div>
+    <div id="game">
+        <div id="chat"></div>
+        <span id="msg-input-box"><span id="msg-input"></span><span id="text-cursor">_</span></span>
+    </div>
+</body>
+<script src="socket.io/socket.io.js"></script>
+<script src="assets/enums.js"></script>
+<script src="assets/client.js"></script>
+</html>
