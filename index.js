@@ -233,8 +233,6 @@ io.on("connection", (socket) => {
                                     }, 10000);
                                 }
                             }
-
-                            Object.values(game.players).map((player) => { return {...player, votes: 0, voted: []} })
                         }
                         break
 
@@ -254,14 +252,14 @@ io.on("connection", (socket) => {
                             }
                         })
 
-                        if (attacks == game.status.werewolvesLeft) {
+                        if (attacks >= game.status.werewolvesLeft) {
                             player.role = enums.roles.DEAD
                             game.status.time = enums.times.DAY
                             game.status.action = enums.actions.VOTE
                             game.status.playersLeft -= 1
 
                             player.socket.emit("status-msg", `The werewolf, ${name}, has killed you.`, gameID)
-                            io.emit("status-msg", `WEREWOLVES, SLEEP. Time spins, turning night to day. In the night, ${player.name}, was killed.`, gameID)
+                            io.emit("status-msg", `WEREWOLVES, SLEEP. Time spins, turning night to day. In the night, ${playerName}, was killed.`, gameID)
                             if (game.status.playersLeft == game.status.werewolvesLeft * 2) {
                                 io.emit("win-msg", `After the villagers died, the werewolves reign over the village, terrorizing all who pass...`, gameID)
                             }
@@ -271,6 +269,7 @@ io.on("connection", (socket) => {
 
                             io.emit("status-msg", `WEREWOLVES, SLEEP. Time starts to spin, Night becomes Day.`, gameID)
                         }
+                        break
                     
                     case enums.actions.SEER:
                         if (role != enums.roles.SEER) {
@@ -282,6 +281,8 @@ io.on("connection", (socket) => {
 
                         game.status.action = enums.actions.WEREWOLVES
                         io.emit("status-msg", `SEER, SLEEP! Dusk becomes darker, until it is night. WEREWOLVES, AWAKEN!`, gameID)
+
+                        Object.values(game.players).map((player) => { return { ...player, votes: 0, voted: [] } })
                         break
                 }
         }
